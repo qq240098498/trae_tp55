@@ -291,25 +291,23 @@ export default function Matchmaking() {
               )}
 
               <div className="flex items-center gap-2 pt-3 border-t border-cream-200" onClick={(e) => e.stopPropagation()}>
-                {(m.status === 'recruiting' || m.status === 'full') && (
-                  <>
-                    <button
-                      onClick={() => openApply(m)}
-                      className="flex-1 btn-secondary text-sm py-2 flex items-center justify-center gap-1.5"
-                    >
-                      <UserPlus className="w-3.5 h-3.5" />
-                      申请加入
-                    </button>
-                    {m.status === 'full' && (
-                      <button
-                        onClick={() => openConfirm(m)}
-                        className="flex-1 btn-primary text-sm py-2 flex items-center justify-center gap-1.5"
-                      >
-                        <Lock className="w-3.5 h-3.5" />
-                        确认成局
-                      </button>
-                    )}
-                  </>
+                {m.status === 'recruiting' && (
+                  <button
+                    onClick={() => openApply(m)}
+                    className="flex-1 btn-secondary text-sm py-2 flex items-center justify-center gap-1.5"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    申请加入
+                  </button>
+                )}
+                {m.status === 'full' && (
+                  <button
+                    onClick={() => openConfirm(m)}
+                    className="flex-1 btn-primary text-sm py-2 flex items-center justify-center gap-1.5"
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    确认成局
+                  </button>
                 )}
                 {(m.status === 'recruiting' || m.status === 'full') && (
                   <button
@@ -380,8 +378,12 @@ export default function Matchmaking() {
               <input
                 type="number"
                 min={2}
+                max={20}
                 value={createForm.totalPeopleNeeded}
-                onChange={(e) => setCreateForm({ ...createForm, totalPeopleNeeded: Number(e.target.value) })}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setCreateForm({ ...createForm, totalPeopleNeeded: Math.min(Math.max(2, val), 20) });
+                }}
                 className="input-field"
               />
             </div>
@@ -450,13 +452,20 @@ export default function Matchmaking() {
             <div className="p-4 rounded-2xl bg-gradient-to-br from-cream-50 to-gold-50 border border-gold-200/50">
               <div className="flex items-center gap-3 mb-2">
                 <span className="text-2xl">{ROOM_TYPE_ICONS[selectedMatchmaking.roomType]}</span>
-                <div>
+                <div className="flex-1">
                   <p className="font-serif font-bold text-primary">
                     {ROOM_TYPE_LABELS[selectedMatchmaking.roomType]} 拼桌
                   </p>
                   <p className="text-xs text-ink-500">
                     发起人：{selectedMatchmaking.hostName} · 当前 {selectedMatchmaking.currentPeople}/{selectedMatchmaking.totalPeopleNeeded} 人
                   </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-ink-400">还差</p>
+                  <p className="font-serif font-bold text-lg text-coral">
+                    {Math.max(0, selectedMatchmaking.totalPeopleNeeded - selectedMatchmaking.currentPeople)}
+                  </p>
+                  <p className="text-xs text-ink-400">人满员</p>
                 </div>
               </div>
             </div>
@@ -483,14 +492,28 @@ export default function Matchmaking() {
             />
           </div>
           <div>
-            <label className="label-text">加入人数</label>
-            <input
-              type="number"
-              min={1}
-              value={applyForm.peopleCount}
-              onChange={(e) => setApplyForm({ ...applyForm, peopleCount: Number(e.target.value) })}
-              className="input-field"
-            />
+            <label className="label-text">
+            加入人数
+            {selectedMatchmaking && (
+              <span className="text-ink-400 ml-1">
+                （最多 {Math.max(1, selectedMatchmaking.totalPeopleNeeded - selectedMatchmaking.currentPeople)} 人）
+              </span>
+            )}
+          </label>
+          <input
+            type="number"
+            min={1}
+            max={selectedMatchmaking ? Math.max(1, selectedMatchmaking.totalPeopleNeeded - selectedMatchmaking.currentPeople) : 1}
+            value={applyForm.peopleCount}
+            onChange={(e) => {
+              const val = Number(e.target.value);
+              const maxVal = selectedMatchmaking
+                ? Math.max(1, selectedMatchmaking.totalPeopleNeeded - selectedMatchmaking.currentPeople)
+                : 1;
+              setApplyForm({ ...applyForm, peopleCount: Math.min(Math.max(1, val), maxVal) });
+            }}
+            className="input-field"
+          />
           </div>
 
           <div className="flex gap-3 pt-2">
@@ -634,7 +657,7 @@ export default function Matchmaking() {
               <button onClick={() => setDetailModalOpen(false)} className="flex-1 btn-ghost">
                 关闭
               </button>
-              {(selectedMatchmaking.status === 'recruiting' || selectedMatchmaking.status === 'full') && (
+              {selectedMatchmaking.status === 'recruiting' && (
                 <button
                   onClick={() => {
                     setDetailModalOpen(false);

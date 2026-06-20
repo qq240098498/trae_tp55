@@ -77,3 +77,4 @@ app.use((req: Request, res: Response) => {
 })
 
 export default app
+

@@ -23,14 +23,18 @@ router.post('/', (req, res) => {
   if (!validRoomTypes.includes(roomType)) {
     return res.status(400).json({ error: '无效的包间类型' });
   }
-  if (Number(totalPeopleNeeded) < 2) {
+  const count = Number(totalPeopleNeeded);
+  if (count < 2) {
     return res.status(400).json({ error: '总人数至少为2人' });
+  }
+  if (count > 20) {
+    return res.status(400).json({ error: '总人数不能超过20人' });
   }
   const matchmaking = store.createMatchmaking({
     roomType,
     hostName,
     hostPhone,
-    totalPeopleNeeded: Number(totalPeopleNeeded),
+    totalPeopleNeeded: count,
     note,
   });
   res.status(201).json(matchmaking);
@@ -65,15 +69,26 @@ router.post('/:id/apply', (req, res) => {
   if (!name || !phone || !peopleCount) {
     return res.status(400).json({ error: '缺少必填字段' });
   }
+  const count = Number(peopleCount);
+  if (count < 1) {
+    return res.status(400).json({ error: '加入人数至少为1人' });
+  }
   const matchmaking = store.getMatchmakingById(id);
   if (!matchmaking) return res.status(404).json({ error: '拼桌信息不存在' });
-  if (matchmaking.status !== 'recruiting' && matchmaking.status !== 'full') {
+  if (matchmaking.status !== 'recruiting') {
     return res.status(400).json({ error: '当前状态不可申请加入' });
+  }
+  const remaining = matchmaking.totalPeopleNeeded - matchmaking.currentPeople;
+  if (remaining <= 0) {
+    return res.status(400).json({ error: '拼桌人数已满，暂不接受申请' });
+  }
+  if (count > remaining) {
+    return res.status(400).json({ error: `最多还可加入 ${remaining} 人` });
   }
   const updated = store.addApplicant(id, {
     name,
     phone,
-    peopleCount: Number(peopleCount),
+    peopleCount: count,
   });
   res.json(updated);
 });
@@ -88,6 +103,14 @@ router.put('/:id/applicants/:applicantId', (req, res) => {
   if (!matchmaking) return res.status(404).json({ error: '拼桌信息不存在' });
   if (matchmaking.status === 'confirmed' || matchmaking.status === 'cancelled') {
     return res.status(400).json({ error: '当前状态无法审核' });
+  }
+  const applicant = matchmaking.applicants.find((a) => a.id === applicantId);
+  if (!applicant) return res.status(404).json({ error: '申请人不存在' });
+  if (status === 'approved' && applicant.status !== 'approved') {
+    const remaining = matchmaking.totalPeopleNeeded - matchmaking.currentPeople;
+    if (applicant.peopleCount > remaining) {
+      return res.status(400).json({ error: `人数不足，最多还可加入 ${remaining} 人` });
+    }
   }
   const updated = store.updateApplicantStatus(id, applicantId, status as MatchmakingApplicant['status']);
   res.json(updated);
