@@ -2,7 +2,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import type { Room, Booking, Product, Order, Matchmaking, MatchmakingApplicant } from '../shared/types.js';
+import type { Room, Booking, Product, Order, Matchmaking, MatchmakingApplicant, CustomerPreference, RoomType } from '../shared/types.js';
 import { generateId } from '../shared/utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -17,6 +17,7 @@ interface Database {
   products: Product[];
   orders: Order[];
   matchmakings: Matchmaking[];
+  customerPreferences: CustomerPreference[];
 }
 
 let db: Database = loadDatabase();
@@ -112,6 +113,7 @@ function createInitialDatabase(): Database {
     })),
     orders: [],
     matchmakings: [],
+    customerPreferences: [],
   };
 }
 
@@ -162,6 +164,10 @@ export const store = {
       createdAt: new Date().toISOString(),
     };
     db.bookings.push(booking);
+    const room = db.rooms.find((r) => r.id === data.roomId);
+    if (room) {
+      store.recordCustomerVisit(data.customerPhone, data.customerName, data.roomId, room.type);
+    }
     saveDatabase();
     return booking;
   },
@@ -319,5 +325,107 @@ export const store = {
     };
     saveDatabase();
     return db.matchmakings[idx];
+  },
+
+  getCustomerPreferences(): CustomerPreference[] {
+    return db.customerPreferences;
+  },
+  getCustomerPreferenceByPhone(phone: string): CustomerPreference | undefined {
+    return db.customerPreferences.find((cp) => cp.customerPhone === phone);
+  },
+  getCustomerPreferenceById(id: string): CustomerPreference | undefined {
+    return db.customerPreferences.find((cp) => cp.id === id);
+  },
+  createCustomerPreference(data: Omit<CustomerPreference, 'id' | 'createdAt' | 'updatedAt' | 'visitCount' | 'lastVisitAt' | 'preferredRoomIds' | 'preferredRoomTypes' | 'preferredTea' | 'seatPreference'> & { preferredTea?: string; seatPreference?: string }): CustomerPreference {
+    const now = new Date().toISOString();
+    const pref: CustomerPreference = {
+      id: generateId(),
+      customerPhone: data.customerPhone,
+      customerName: data.customerName,
+      preferredRoomIds: [],
+      preferredRoomTypes: [],
+      preferredTea: data.preferredTea || '',
+      seatPreference: data.seatPreference || '',
+      visitCount: 0,
+      lastVisitAt: now,
+      createdAt: now,
+      updatedAt: now,
+    };
+    db.customerPreferences.push(pref);
+    saveDatabase();
+    return pref;
+  },
+  updateCustomerPreference(id: string, data: Partial<Omit<CustomerPreference, 'id' | 'createdAt' | 'updatedAt'>>): CustomerPreference | undefined {
+    const idx = db.customerPreferences.findIndex((cp) => cp.id === id);
+    if (idx === -1) return undefined;
+    db.customerPreferences[idx] = { ...db.customerPreferences[idx], ...data, updatedAt: new Date().toISOString() };
+    saveDatabase();
+    return db.customerPreferences[idx];
+  },
+  deleteCustomerPreference(id: string): boolean {
+    const idx = db.customerPreferences.findIndex((cp) => cp.id === id);
+    if (idx === -1) return false;
+    db.customerPreferences.splice(idx, 1);
+    saveDatabase();
+    return true;
+  },
+  recordCustomerVisit(phone: string, name: string, roomId: string, roomType: RoomType): CustomerPreference {
+    let pref = db.customerPreferences.find((cp) => cp.customerPhone === phone);
+    const now = new Date().toISOString();
+    if (!pref) {
+      pref = {
+        id: generateId(),
+        customerPhone: phone,
+        customerName: name,
+        preferredRoomIds: [],
+        preferredRoomTypes: [],
+        preferredTea: '',
+        seatPreference: '',
+        visitCount: 0,
+        lastVisitAt: now,
+        createdAt: now,
+        updatedAt: now,
+      };
+      db.customerPreferences.push(pref);
+    }
+    pref.customerName = name;
+    pref.visitCount += 1;
+    pref.lastVisitAt = now;
+    pref.updatedAt = now;
+    const roomIdx = pref.preferredRoomIds.findIndex((r) => r.roomId === roomId);
+    if (roomIdx === -1) {
+      pref.preferredRoomIds.push({ roomId, count: 1 });
+    } else {
+      pref.preferredRoomIds[roomIdx].count += 1;
+    }
+    pref.preferredRoomIds.sort((a, b) => b.count - a.count);
+    const typeIdx = pref.preferredRoomTypes.findIndex((t) => t.type === roomType);
+    if (typeIdx === -1) {
+      pref.preferredRoomTypes.push({ type: roomType, count: 1 });
+    } else {
+      pref.preferredRoomTypes[typeIdx].count += 1;
+    }
+    pref.preferredRoomTypes.sort((a, b) => b.count - a.count);
+    saveDatabase();
+    return pref;
+  },
+  getRecommendedRoomsForCustomer(phone: string): { roomId: string; score: number }[] {
+    const pref = db.customerPreferences.find((cp) => cp.customerPhone === phone);
+    if (!pref) return [];
+    const scores: Map<string, number> = new Map();
+    for (const pr of pref.preferredRoomIds) {
+      const room = db.rooms.find((r) => r.id === pr.roomId);
+      if (room && room.status === 'idle') {
+        scores.set(pr.roomId, (scores.get(pr.roomId) || 0) + pr.count * 10);
+      }
+    }
+    for (const pt of pref.preferredRoomTypes) {
+      for (const room of db.rooms.filter((r) => r.type === pt.type && r.status === 'idle')) {
+        scores.set(room.id, (scores.get(room.id) || 0) + pt.count * 3);
+      }
+    }
+    return Array.from(scores.entries())
+      .map(([roomId, score]) => ({ roomId, score }))
+      .sort((a, b) => b.score - a.score);
   },
 };

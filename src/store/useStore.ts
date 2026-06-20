@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type { Room, Booking, Product, Order, Stats, OrderItem, Matchmaking, MatchmakingApplicant, RoomType } from '@shared/types';
-import { roomsApi, bookingsApi, productsApi, ordersApi, statsApi, matchmakingApi } from '@/lib/api';
+import type { Room, Booking, Product, Order, Stats, OrderItem, Matchmaking, MatchmakingApplicant, RoomType, CustomerPreference } from '@shared/types';
+import { roomsApi, bookingsApi, productsApi, ordersApi, statsApi, matchmakingApi, customerPreferencesApi } from '@/lib/api';
 
 interface AppState {
   rooms: Room[];
@@ -9,6 +9,9 @@ interface AppState {
   orders: Order[];
   activeOrders: Order[];
   matchmakings: Matchmaking[];
+  customerPreferences: CustomerPreference[];
+  currentCustomerPreference: CustomerPreference | null;
+  recommendedRooms: { roomId: string; score: number }[];
   stats: Stats | null;
   loading: boolean;
   error: string | null;
@@ -42,6 +45,14 @@ interface AppState {
   updateApplicantStatus: (matchmakingId: string, applicantId: string, status: MatchmakingApplicant['status']) => Promise<void>;
   confirmMatchmaking: (id: string, roomId: string) => Promise<void>;
   cancelMatchmaking: (id: string) => Promise<void>;
+  fetchCustomerPreferences: () => Promise<void>;
+  fetchCustomerPreferenceByPhone: (phone: string) => Promise<CustomerPreference | null>;
+  fetchRecommendedRooms: (phone: string) => Promise<void>;
+  createCustomerPreference: (data: { customerPhone: string; customerName: string; preferredTea?: string; seatPreference?: string }) => Promise<void>;
+  updateCustomerPreference: (id: string, data: Partial<Omit<CustomerPreference, 'id' | 'createdAt' | 'updatedAt'>>) => Promise<void>;
+  updateCustomerPreferenceByPhone: (phone: string, data: Partial<Omit<CustomerPreference, 'id' | 'createdAt' | 'updatedAt'>>) => Promise<void>;
+  deleteCustomerPreference: (id: string) => Promise<void>;
+  clearCurrentCustomerPreference: () => void;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -51,6 +62,9 @@ export const useStore = create<AppState>((set, get) => ({
   orders: [],
   activeOrders: [],
   matchmakings: [],
+  customerPreferences: [],
+  currentCustomerPreference: null,
+  recommendedRooms: [],
   stats: null,
   loading: false,
   error: null,
@@ -268,5 +282,65 @@ export const useStore = create<AppState>((set, get) => ({
   cancelMatchmaking: async (id) => {
     await matchmakingApi.cancel(id);
     await get().fetchMatchmakings();
+  },
+
+  fetchCustomerPreferences: async () => {
+    try {
+      const prefs = await customerPreferencesApi.list();
+      set({ customerPreferences: prefs });
+    } catch (e: any) {
+      set({ error: e.message });
+    }
+  },
+
+  fetchCustomerPreferenceByPhone: async (phone) => {
+    try {
+      const pref = await customerPreferencesApi.getByPhone(phone);
+      set({ currentCustomerPreference: pref });
+      return pref;
+    } catch {
+      set({ currentCustomerPreference: null });
+      return null;
+    }
+  },
+
+  fetchRecommendedRooms: async (phone) => {
+    try {
+      const rooms = await customerPreferencesApi.getRecommendations(phone);
+      set({ recommendedRooms: rooms });
+    } catch (e) {
+      set({ recommendedRooms: [], error: e instanceof Error ? e.message : '获取推荐失败' });
+    }
+  },
+
+  createCustomerPreference: async (data) => {
+    await customerPreferencesApi.create(data);
+    await get().fetchCustomerPreferences();
+  },
+
+  updateCustomerPreference: async (id, data) => {
+    await customerPreferencesApi.update(id, data);
+    await get().fetchCustomerPreferences();
+    if (get().currentCustomerPreference?.id === id) {
+      await get().fetchCustomerPreferenceByPhone(get().currentCustomerPreference.customerPhone);
+    }
+  },
+
+  updateCustomerPreferenceByPhone: async (phone, data) => {
+    await customerPreferencesApi.updateByPhone(phone, data);
+    await get().fetchCustomerPreferences();
+    await get().fetchCustomerPreferenceByPhone(phone);
+  },
+
+  deleteCustomerPreference: async (id) => {
+    await customerPreferencesApi.remove(id);
+    await get().fetchCustomerPreferences();
+    if (get().currentCustomerPreference?.id === id) {
+      set({ currentCustomerPreference: null });
+    }
+  },
+
+  clearCurrentCustomerPreference: () => {
+    set({ currentCustomerPreference: null, recommendedRooms: [] });
   },
 }));

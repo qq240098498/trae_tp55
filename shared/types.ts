@@ -165,3 +165,19 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   alipay: '支付宝',
   card: '银行卡',
 };
+
+export interface CustomerPreference {
+  id: string;
+  customerPhone: string;
+  customerName: string;
+  preferredRoomIds: { roomId: string; count: number }[];
+  preferredRoomTypes: { type: RoomType; count: number }[];
+  preferredTea: string;
+  seatPreference: string;
+  visitCount: number;
+  lastVisitAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const CUSTOMER_PREFERENCE_TEA_OPTIONS = ['铁观音', '普洱茶', '菊花茶', '绿茶', '可乐', '雪碧', '矿泉水', '红牛'];

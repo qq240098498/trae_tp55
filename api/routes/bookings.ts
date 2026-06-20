@@ -19,6 +19,20 @@ router.post('/', (req, res) => {
   if (!roomId || !customerName || !customerPhone || !date || !startTime || !endTime) {
     return res.status(400).json({ error: '缺少必填字段' });
   }
+  let finalNotes = notes || '';
+  const pref = store.getCustomerPreferenceByPhone(customerPhone);
+  if (pref) {
+    const autoNotes: string[] = [];
+    if (pref.preferredTea) {
+      autoNotes.push(`茶水偏好: ${pref.preferredTea}`);
+    }
+    if (pref.seatPreference) {
+      autoNotes.push(`座椅偏好: ${pref.seatPreference}`);
+    }
+    if (autoNotes.length > 0) {
+      finalNotes = finalNotes ? `${finalNotes}\n${autoNotes.join('\n')}` : autoNotes.join('\n');
+    }
+  }
   const booking = store.createBooking({
     roomId,
     customerName,
@@ -27,7 +41,7 @@ router.post('/', (req, res) => {
     startTime,
     endTime,
     deposit: Number(deposit) || 0,
-    notes,
+    notes: finalNotes,
   });
   const room = store.getRoomById(roomId);
   if (room && room.status === 'idle') {

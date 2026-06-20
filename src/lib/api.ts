@@ -1,4 +1,4 @@
-import type { Room, Booking, Product, Order, Stats, OrderItem, PaymentMethod, Matchmaking, MatchmakingApplicant, RoomType } from '@shared/types';
+import type { Room, Booking, Product, Order, Stats, OrderItem, PaymentMethod, Matchmaking, MatchmakingApplicant, RoomType, CustomerPreference } from '@shared/types';
 
 const API_BASE = '/api';
 
@@ -83,4 +83,18 @@ export const matchmakingApi = {
     request<Matchmaking>(`/matchmaking/${id}/confirm`, { method: 'POST', body: JSON.stringify({ roomId }) }),
   cancel: (id: string) =>
     request<Matchmaking>(`/matchmaking/${id}/cancel`, { method: 'POST' }),
+};
+
+export const customerPreferencesApi = {
+  list: () => request<CustomerPreference[]>('/customer-preferences'),
+  get: (id: string) => request<CustomerPreference>(`/customer-preferences/${id}`),
+  getByPhone: (phone: string) => request<CustomerPreference>(`/customer-preferences/phone/${phone}`),
+  getRecommendations: (phone: string) => request<{ roomId: string; score: number }[]>(`/customer-preferences/${phone}/recommend`),
+  create: (data: { customerPhone: string; customerName: string; preferredTea?: string; seatPreference?: string }) =>
+    request<CustomerPreference>('/customer-preferences', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: Partial<Omit<CustomerPreference, 'id' | 'createdAt' | 'updatedAt'>>) =>
+    request<CustomerPreference>(`/customer-preferences/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  updateByPhone: (phone: string, data: Partial<Omit<CustomerPreference, 'id' | 'createdAt' | 'updatedAt'>>) =>
+    request<CustomerPreference>(`/customer-preferences/phone/${phone}`, { method: 'PUT', body: JSON.stringify(data) }),
+  remove: (id: string) => request<{ success: boolean }>(`/customer-preferences/${id}`, { method: 'DELETE' }),
 };

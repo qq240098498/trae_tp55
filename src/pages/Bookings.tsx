@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Plus,
@@ -12,11 +12,19 @@ import {
   Phone,
   User,
   Clock,
+  Star,
+  Coffee,
+  Armchair,
+  Crown,
+  Sparkles,
+  Save,
 } from 'lucide-react';
 import { useStore } from '@/store/useStore';
+import { customerPreferencesApi } from '@/lib/api';
 import {
   ROOM_TYPE_LABELS,
   ROOM_TYPE_ICONS,
+  CUSTOMER_PREFERENCE_TEA_OPTIONS,
   type Booking,
   type BookingStatus,
 } from '@shared/types';
@@ -39,12 +47,30 @@ const statusLabels: Record<BookingStatus, string> = {
 
 export default function Bookings() {
   const navigate = useNavigate();
-  const { bookings, rooms, createBooking, updateBooking, deleteBooking, createOrder } = useStore();
+  const {
+    bookings,
+    rooms,
+    createBooking,
+    updateBooking,
+    deleteBooking,
+    createOrder,
+    customerPreferences,
+    currentCustomerPreference,
+    recommendedRooms,
+    fetchCustomerPreferences,
+    fetchCustomerPreferenceByPhone,
+    fetchRecommendedRooms,
+    updateCustomerPreferenceByPhone,
+    createCustomerPreference,
+    clearCurrentCustomerPreference,
+  } = useStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Booking | null>(null);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<BookingStatus | 'all'>('all');
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [prefTea, setPrefTea] = useState('');
+  const [prefSeat, setPrefSeat] = useState('');
 
   const todayStr = formatDate(new Date());
   const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
@@ -66,6 +92,93 @@ export default function Bookings() {
   };
 
   const [form, setForm] = useState(formInitial);
+
+  useEffect(() => {
+    fetchCustomerPreferences();
+  }, [fetchCustomerPreferences]);
+
+  const getCustomerPref = (phone: string) => {
+    return customerPreferences.find((cp) => cp.customerPhone === phone);
+  };
+
+  const isRegularCustomer = (phone: string) => {
+    const pref = getCustomerPref(phone);
+    return pref && pref.visitCount >= 2;
+  };
+
+  useEffect(() => {
+    const phone = form.customerPhone.trim();
+    if (phone.length >= 7) {
+      (async () => {
+        const pref = await fetchCustomerPreferenceByPhone(phone);
+        if (pref) {
+          setPrefTea(pref.preferredTea || '');
+          setPrefSeat(pref.seatPreference || '');
+          const recs = await customerPreferencesApi.getRecommendations(phone);
+          if (recs.length > 0 && !editing) {
+            const bestRoom = rooms.find((r) => r.id === recs[0].roomId && r.status === 'idle');
+            if (bestRoom) {
+              setForm((f) => ({ ...f, roomId: bestRoom.id }));
+            }
+          }
+          if (pref.customerName && !form.customerName.trim()) {
+            setForm((f) => ({ ...f, customerName: pref.customerName }));
+          }
+        }
+      })();
+    } else {
+      clearCurrentCustomerPreference();
+      setPrefTea('');
+      setPrefSeat('');
+    }
+  }, [form.customerPhone, fetchCustomerPreferenceByPhone, clearCurrentCustomerPreference, rooms, editing, form.customerName]);
+
+  const handleSavePreferences = async () => {
+    const phone = form.customerPhone.trim();
+    const name = form.customerName.trim();
+    if (!phone || !name) {
+      alert('请先填写客户姓名和电话');
+      return;
+    }
+    const existing = getCustomerPref(phone);
+    try {
+      if (existing) {
+        await updateCustomerPreferenceByPhone(phone, {
+          preferredTea: prefTea,
+          seatPreference: prefSeat,
+        });
+      } else {
+        await createCustomerPreference({
+          customerPhone: phone,
+          customerName: name,
+          preferredTea: prefTea,
+          seatPreference: prefSeat,
+        });
+      }
+      alert('偏好已保存');
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '保存失败');
+    }
+  };
+
+  const sortedRoomsForSelect = useMemo(() => {
+    const availableRooms = rooms.filter((r) => r.status === 'idle' || r.id === editing?.roomId);
+    if (recommendedRooms.length === 0) return availableRooms;
+    const recMap = new Map(recommendedRooms.map((r) => [r.roomId, r.score]));
+    return [...availableRooms].sort((a, b) => {
+      const scoreA = recMap.get(a.id) || 0;
+      const scoreB = recMap.get(b.id) || 0;
+      return scoreB - scoreA;
+    });
+  }, [rooms, recommendedRooms, editing]);
+
+  const getRoomBadge = (roomId: string) => {
+    const rec = recommendedRooms.find((r) => r.roomId === roomId);
+    if (!rec) return null;
+    if (rec.score >= 10) return { label: '常坐包间', color: 'bg-amber-100 text-amber-700' };
+    if (rec.score >= 3) return { label: '偏好推荐', color: 'bg-sky-100 text-sky-700' };
+    return null;
+  };
 
   const sortedBookings = useMemo(
     () =>
@@ -119,8 +232,8 @@ export default function Bookings() {
         await createBooking(form);
       }
       setModalOpen(false);
-    } catch (e: any) {
-      alert(e.message);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '操作失败');
     }
   };
 
@@ -134,8 +247,8 @@ export default function Bookings() {
         bookingId: booking.id,
       });
       navigate(`/checkout/${order.id}`);
-    } catch (e: any) {
-      alert(e.message);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '开台失败');
     }
   };
 
@@ -318,7 +431,13 @@ export default function Bookings() {
                   <div className="space-y-1.5 mb-4 text-sm">
                     <div className="flex items-center gap-2 text-ink-600">
                       <User className="w-3.5 h-3.5 text-gold" />
-                      {booking.customerName}
+                      <span className="font-medium">{booking.customerName}</span>
+                      {isRegularCustomer(booking.customerPhone) && (
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700 text-[10px] font-bold">
+                          <Crown className="w-3 h-3" />
+                          老客
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 text-ink-600">
                       <Phone className="w-3.5 h-3.5 text-gold" />
@@ -328,6 +447,28 @@ export default function Bookings() {
                       <CalendarIcon className="w-3.5 h-3.5 text-gold" />
                       {booking.date} {booking.startTime} - {booking.endTime}
                     </div>
+                    {(() => {
+                      const pref = getCustomerPref(booking.customerPhone);
+                      if (pref && (pref.preferredTea || pref.seatPreference)) {
+                        return (
+                          <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                            {pref.preferredTea && (
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-600 text-[10px]">
+                                <Coffee className="w-2.5 h-2.5" />
+                                {pref.preferredTea}
+                              </span>
+                            )}
+                            {pref.seatPreference && (
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-sky-50 text-sky-600 text-[10px]">
+                                <Armchair className="w-2.5 h-2.5" />
+                                {pref.seatPreference}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
 
                   <div className="flex items-center justify-between pt-3 border-t border-cream-200">
@@ -384,25 +525,72 @@ export default function Bookings() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         title={editing ? '编辑预约' : '新增预约'}
-        size="md"
+        size="lg"
       >
         <div className="space-y-4">
+          {currentCustomerPreference && (
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50 to-gold-50 border-2 border-amber-200">
+              <div className="flex items-center gap-2 mb-2">
+                <Crown className="w-5 h-5 text-amber-600" />
+                <span className="font-serif font-bold text-amber-700">
+                  老客常客 · 第 {currentCustomerPreference.visitCount} 次到店
+                </span>
+                <Sparkles className="w-4 h-4 text-amber-500" />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {currentCustomerPreference.preferredRoomTypes.length > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white/70 text-sm text-ink-600">
+                    <Star className="w-3.5 h-3.5 text-gold" />
+                    偏好: {currentCustomerPreference.preferredRoomTypes.map((t) => ROOM_TYPE_LABELS[t.type]).join('、')}
+                  </span>
+                )}
+                {currentCustomerPreference.preferredTea && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white/70 text-sm text-ink-600">
+                    <Coffee className="w-3.5 h-3.5 text-emerald-500" />
+                    {currentCustomerPreference.preferredTea}
+                  </span>
+                )}
+                {currentCustomerPreference.seatPreference && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white/70 text-sm text-ink-600">
+                    <Armchair className="w-3.5 h-3.5 text-sky-500" />
+                    {currentCustomerPreference.seatPreference}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="label-text">选择包间</label>
+              <label className="label-text">选择包间 {recommendedRooms.length > 0 && <span className="text-xs text-sky-600 ml-1">(已按偏好排序)</span>}</label>
               <select
                 value={form.roomId}
                 onChange={(e) => setForm({ ...form, roomId: e.target.value })}
                 className="select-field"
               >
-                {rooms
-                  .filter((r) => r.status === 'idle' || r.id === editing?.roomId)
-                  .map((r) => (
+                {sortedRoomsForSelect.map((r) => {
+                  const badge = getRoomBadge(r.id);
+                  return (
                     <option key={r.id} value={r.id}>
-                      {ROOM_TYPE_ICONS[r.type]} {r.roomNumber} - {ROOM_TYPE_LABELS[r.type]} ({formatCurrency(r.hourlyRate)}/时)
+                      {ROOM_TYPE_ICONS[r.type]} {r.roomNumber} - {ROOM_TYPE_LABELS[r.type]} ({formatCurrency(r.hourlyRate)}/时){badge ? ` [${badge.label}]` : ''}
                     </option>
-                  ))}
+                  );
+                })}
               </select>
+              {recommendedRooms.length > 0 && (
+                <div className="mt-1.5 flex flex-wrap gap-1">
+                  {recommendedRooms.slice(0, 3).map((rec) => {
+                    const room = rooms.find((r) => r.id === rec.roomId);
+                    const badge = getRoomBadge(rec.roomId);
+                    if (!room || !badge) return null;
+                    return (
+                      <span key={rec.roomId} className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-medium ${badge.color}`}>
+                        {room.roomNumber} {badge.label}
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
             </div>
             <div>
               <label className="label-text">定金 (元)</label>
@@ -434,9 +622,59 @@ export default function Bookings() {
                 value={form.customerPhone}
                 onChange={(e) => setForm({ ...form, customerPhone: e.target.value })}
                 className="input-field"
-                placeholder="请输入手机号"
+                placeholder="请输入手机号，自动识别老客"
               />
             </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-cream-50 border border-cream-200">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-serif font-bold text-primary flex items-center gap-2">
+                <Star className="w-4 h-4 text-gold" />
+                客户偏好设置
+              </h4>
+              <button
+                onClick={handleSavePreferences}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gold-100 text-gold-700 hover:bg-gold-200 transition-colors"
+              >
+                <Save className="w-3.5 h-3.5" />
+                保存偏好
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="label-text flex items-center gap-1">
+                  <Coffee className="w-3.5 h-3.5 text-emerald-500" />
+                  茶水偏好
+                </label>
+                <select
+                  value={prefTea}
+                  onChange={(e) => setPrefTea(e.target.value)}
+                  className="select-field"
+                >
+                  <option value="">请选择茶水偏好</option>
+                  {CUSTOMER_PREFERENCE_TEA_OPTIONS.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label-text flex items-center gap-1">
+                  <Armchair className="w-3.5 h-3.5 text-sky-500" />
+                  座椅偏好
+                </label>
+                <input
+                  type="text"
+                  value={prefSeat}
+                  onChange={(e) => setPrefSeat(e.target.value)}
+                  className="input-field"
+                  placeholder="如:靠窗位、靠门位等"
+                />
+              </div>
+            </div>
+            <p className="mt-2 text-xs text-ink-400">
+              保存后，下次预约将自动备注茶水和座椅偏好
+            </p>
           </div>
 
           <div>
@@ -478,8 +716,13 @@ export default function Bookings() {
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
               className="input-field resize-none"
               rows={2}
-              placeholder="特殊要求等..."
+              placeholder="特殊要求等... (茶水和座椅偏好将在创建时自动追加)"
             />
+            {currentCustomerPreference && (currentCustomerPreference.preferredTea || currentCustomerPreference.seatPreference) && (
+              <p className="mt-1.5 text-xs text-emerald-600">
+                ✓ 将自动追加: {[currentCustomerPreference.preferredTea && `茶水偏好: ${currentCustomerPreference.preferredTea}`, currentCustomerPreference.seatPreference && `座椅偏好: ${currentCustomerPreference.seatPreference}`].filter(Boolean).join('，')}
+              </p>
+            )}
           </div>
 
           <div className="flex gap-3 pt-2">
