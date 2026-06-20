@@ -1,0 +1,203 @@
+{
+  "rooms": [
+    {
+      "id": "mqlp6i02q8mr1c",
+      "roomNumber": "A101",
+      "type": "mahjong",
+      "capacity": 4,
+      "hourlyRate": 48,
+      "status": "idle",
+      "createdAt": "2026-06-20T01:47:14.209Z"
+    },
+    {
+      "id": "mqlp6i0288rb25",
+      "roomNumber": "A102",
+      "type": "mahjong",
+      "capacity": 4,
+      "hourlyRate": 48,
+      "status": "idle",
+      "createdAt": "2026-06-20T01:47:14.209Z"
+    },
+    {
+      "id": "mqlp6i0278006t",
+      "roomNumber": "A103",
+      "type": "mahjong",
+      "capacity": 6,
+      "hourlyRate": 68,
+      "status": "idle",
+      "createdAt": "2026-06-20T01:47:14.209Z"
+    },
+    {
+      "id": "mqlp6i02o625bf",
+      "roomNumber": "B201",
+      "type": "poker",
+      "capacity": 8,
+      "hourlyRate": 58,
+      "status": "idle",
+      "createdAt": "2026-06-20T01:47:14.209Z"
+    },
+    {
+      "id": "mqlp6i02b64uzb",
+      "roomNumber": "B202",
+      "type": "poker",
+      "capacity": 6,
+      "hourlyRate": 48,
+      "status": "idle",
+      "createdAt": "2026-06-20T01:47:14.209Z"
+    },
+    {
+      "id": "mqlp6i02lz33ui",
+      "roomNumber": "C301",
+      "type": "werewolf",
+      "capacity": 12,
+      "hourlyRate": 88,
+      "status": "idle",
+      "createdAt": "2026-06-20T01:47:14.209Z"
+    },
+    {
+      "id": "mqlp6i02qetapo",
+      "roomNumber": "C302",
+      "type": "werewolf",
+      "capacity": 15,
+      "hourlyRate": 108,
+      "status": "idle",
+      "createdAt": "2026-06-20T01:47:14.209Z"
+    },
+    {
+      "id": "mqlp6i02kg485a",
+      "roomNumber": "D401",
+      "type": "script",
+      "capacity": 8,
+      "hourlyRate": 128,
+      "status": "idle",
+      "createdAt": "2026-06-20T01:47:14.209Z"
+    },
+    {
+      "id": "mqlp6i02x5w9pb",
+      "roomNumber": "D402",
+      "type": "script",
+      "capacity": 10,
+      "hourlyRate": 148,
+      "status": "idle",
+      "createdAt": "2026-06-20T01:47:14.209Z"
+    },
+    {
+      "id": "mqlp6i02lnrn6n",
+      "roomNumber": "E501",
+      "type": "ps5",
+      "capacity": 4,
+      "hourlyRate": 38,
+      "status": "idle",
+      "createdAt": "2026-06-20T01:47:14.209Z"
+    },
+    {
+      "id": "mqlp6i02phbo8d",
+      "roomNumber": "E502",
+      "type": "ps5",
+      "capacity": 2,
+      "hourlyRate": 28,
+      "status": "idle",
+      "createdAt": "2026-06-20T01:47:14.209Z"
+    }
+  ],
+  "bookings": [],
+  "products": [
+    {
+      "id": "mqlp6i022bzx8c",
+      "name": "铁观音",
+      "category": "tea",
+      "price": 28,
+      "stock": 100,
+      "createdAt": "2026-06-20T01:47:14.209Z"
+    },
+    {
+      "id": "mqlp6i02x0dqyb",
+      "name": "普洱茶",
+      "category": "tea",
+      "price": 38,
+      "stock": 80,
+      "createdAt": "2026-06-20T01:47:14.209Z"
+    },
+    {
+      "id": "mqlp6i02fx1q5d",
+      "name": "菊花茶",
+      "category": "tea",
+      "price": 18,
+      "stock": 120,
+      "createdAt": "2026-06-20T01:47:14.209Z"
+    },
+    {
+      "id": "mqlp6i024gzyfu",
+      "name": "绿茶",
+      "category": "tea",
+      "price": 22,
+      "stock": 100,
+      "createdAt": "2026-06-20T01:47:14.209Z"
+    },
+    {
+      "id": "mqlp6i0228sokt",
+      "name": "可乐",
+      "category": "drink",
+      "price": 8,
+      "stock": 200,
+      "createdAt": "2026-06-20T01:47:14.209Z"
+    },
+    {
+      "id": "mqlp6i02nxmc00",
+      "name": "雪碧",
+      "category": "drink",
+      "price": 8,
+      "stock": 200,
+      "createdAt": "2026-06-20T01:47:14.209Z"
+    },
+    {
+      "id": "mqlp6i025akf22",
+      "name": "矿泉水",
+      "category": "drink",
+      "price": 5,
+      "stock": 300,
+      "createdAt": "2026-06-20T01:47:14.209Z"
+    },
+    {
+      "id": "mqlp6i02pe5rhz",
+      "name": "红牛",
+      "category": "drink",
+      "price": 12,
+      "stock": 100,
+      "createdAt": "2026-06-20T01:47:14.209Z"
+    },
+    {
+      "id": "mqlp6i0264fgcq",
+      "name": "薯片",
+      "category": "snack",
+      "price": 15,
+      "stock": 80,
+      "createdAt": "2026-06-20T01:47:14.209Z"
+    },
+    {
+      "id": "mqlp6i02ma94oe",
+      "name": "瓜子",
+      "category": "snack",
+      "price": 12,
+      "stock": 150,
+      "createdAt": "2026-06-20T01:47:14.209Z"
+    },
+    {
+      "id": "mqlp6i02ub0p1t",
+      "name": "花生",
+      "category": "snack",
+      "price": 10,
+      "stock": 150,
+      "createdAt": "2026-06-20T01:47:14.209Z"
+    },
+    {
+      "id": "mqlp6i02i8ah9x",
+      "name": "水果拼盘",
+      "category": "snack",
+      "price": 58,
+      "stock": 30,
+      "createdAt": "2026-06-20T01:47:14.209Z"
+    }
+  ],
+  "orders": []
+}

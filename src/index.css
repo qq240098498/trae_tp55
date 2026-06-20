@@ -1,0 +1,103 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: linear-gradient(135deg, #faf8f3 0%, #f5f1e8 50%, #f0ebe0 100%);
+  min-height: 100vh;
+  color: #1a1a1a;
+}
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: rgba(201, 169, 98, 0.3);
+  color: #0F3D30;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f5f1e8;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #c9a962 0%, #a88843 100%);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #dac085 0%, #c9a962 100%);
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #dac085 0%, #c9a962 50%, #a88843 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.paper-texture {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  background-blend-mode: soft-light;
+  opacity: 0.03;
+  pointer-events: none;
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-gold font-medium px-5 py-2.5 rounded-lg transition-all duration-300 hover:bg-primary-700 hover:shadow-gold hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0;
+  }
+  .btn-secondary {
+    @apply bg-gold text-primary-700 font-semibold px-5 py-2.5 rounded-lg transition-all duration-300 hover:bg-gold-400 hover:shadow-gold hover:-translate-y-0.5 active:translate-y-0;
+  }
+  .btn-outline {
+    @apply border-2 border-gold text-gold font-medium px-5 py-2 rounded-lg transition-all duration-300 hover:bg-gold hover:text-primary-700 hover:shadow-gold;
+  }
+  .btn-ghost {
+    @apply text-ink-500 font-medium px-4 py-2 rounded-lg transition-all duration-200 hover:bg-cream hover:text-primary;
+  }
+  .btn-danger {
+    @apply bg-coral text-white font-medium px-5 py-2.5 rounded-lg transition-all duration-300 hover:bg-coral-500 hover:shadow-lg hover:-translate-y-0.5;
+  }
+  .input-field {
+    @apply w-full px-4 py-2.5 bg-white border-2 border-cream-300 rounded-lg text-ink-600 transition-all duration-200 focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold-200 placeholder:text-ink-300;
+  }
+  .select-field {
+    @apply w-full px-4 py-2.5 bg-white border-2 border-cream-300 rounded-lg text-ink-600 transition-all duration-200 focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold-200;
+  }
+  .card {
+    @apply bg-white/80 backdrop-blur-sm rounded-2xl shadow-card border border-cream-200 transition-all duration-300;
+  }
+  .card-hover {
+    @apply hover:shadow-card-hover hover:-translate-y-1;
+  }
+  .label-text {
+    @apply block text-sm font-medium text-ink-500 mb-1.5;
+  }
+  .badge {
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold;
+  }
+  .sidebar-item {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-ink-500 font-medium transition-all duration-200 hover:bg-primary-50 hover:text-primary;
+  }
+  .sidebar-item-active {
+    @apply bg-primary text-gold shadow-gold;
+  }
+  .stat-card {
+    @apply bg-gradient-to-br from-white to-cream-50 rounded-2xl p-5 shadow-card border border-cream-200 relative overflow-hidden;
+  }
+}
