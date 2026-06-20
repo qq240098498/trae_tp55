@@ -15,7 +15,7 @@ export default function App() {
           <Route path="/rooms" element={<Rooms />} />
           <Route path="/bookings" element={<Bookings />} />
           <Route path="/checkout" element={<Checkout />} />
-          <Route path="/checkout/:roomId" element={<Checkout />} />
+          <Route path="/checkout/:orderId" element={<Checkout />} />
           <Route path="/products" element={<Products />} />
         </Route>
       </Routes>

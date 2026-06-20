@@ -61,7 +61,14 @@ export default function Checkout() {
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
 
   const currentOrder = activeOrders.find((o) => o.id === currentOrderId);
-  const room = rooms.find((r) => r.id === currentOrder?.roomId || selectedRoom);
+  const targetRoomId = currentOrder?.roomId || selectedRoom;
+  const room = rooms.find((r) => r.id === targetRoomId);
+
+  useEffect(() => {
+    if (orderId && orderId !== currentOrderId) {
+      setCurrentOrderId(orderId);
+    }
+  }, [orderId]);
 
   useEffect(() => {
     if (currentOrder) {

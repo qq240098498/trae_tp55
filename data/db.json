@@ -6,7 +6,7 @@
       "type": "mahjong",
       "capacity": 4,
       "hourlyRate": 48,
-      "status": "idle",
+      "status": "occupied",
       "createdAt": "2026-06-20T01:47:14.209Z"
     },
     {
@@ -24,7 +24,7 @@
       "type": "mahjong",
       "capacity": 6,
       "hourlyRate": 68,
-      "status": "idle",
+      "status": "occupied",
       "createdAt": "2026-06-20T01:47:14.209Z"
     },
     {
@@ -33,7 +33,7 @@
       "type": "poker",
       "capacity": 8,
       "hourlyRate": 58,
-      "status": "idle",
+      "status": "occupied",
       "createdAt": "2026-06-20T01:47:14.209Z"
     },
     {
@@ -51,7 +51,7 @@
       "type": "werewolf",
       "capacity": 12,
       "hourlyRate": 88,
-      "status": "idle",
+      "status": "occupied",
       "createdAt": "2026-06-20T01:47:14.209Z"
     },
     {
@@ -199,5 +199,59 @@
       "createdAt": "2026-06-20T01:47:14.209Z"
     }
   ],
-  "orders": []
+  "orders": [
+    {
+      "roomId": "mqlp6i02q8mr1c",
+      "customerName": "123213",
+      "customerCount": 2,
+      "startTime": "2026-06-20T02:05:13.672Z",
+      "baseAmount": 0,
+      "items": [],
+      "itemsAmount": 0,
+      "totalAmount": 0,
+      "source": "walkin",
+      "id": "mqlptmx57sze95",
+      "status": "active",
+      "createdAt": "2026-06-20T02:05:13.673Z"
+    },
+    {
+      "roomId": "mqlp6i0278006t",
+      "customerCount": 2,
+      "startTime": "2026-06-20T02:05:18.868Z",
+      "baseAmount": 0,
+      "items": [],
+      "itemsAmount": 0,
+      "totalAmount": 0,
+      "source": "walkin",
+      "id": "mqlptqxg3p657p",
+      "status": "active",
+      "createdAt": "2026-06-20T02:05:18.868Z"
+    },
+    {
+      "roomId": "mqlp6i02o625bf",
+      "customerCount": 4,
+      "startTime": "2026-06-20T02:11:31.178Z",
+      "baseAmount": 0,
+      "items": [],
+      "itemsAmount": 0,
+      "totalAmount": 0,
+      "source": "walkin",
+      "id": "mqlq1q7ez7g413",
+      "status": "active",
+      "createdAt": "2026-06-20T02:11:31.178Z"
+    },
+    {
+      "roomId": "mqlp6i02lz33ui",
+      "customerCount": 6,
+      "startTime": "2026-06-20T02:13:25.313Z",
+      "baseAmount": 0,
+      "items": [],
+      "itemsAmount": 0,
+      "totalAmount": 0,
+      "source": "walkin",
+      "id": "mqlq469u6e9ufp",
+      "status": "active",
+      "createdAt": "2026-06-20T02:13:25.315Z"
+    }
+  ]
 }
