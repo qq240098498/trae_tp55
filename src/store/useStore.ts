@@ -58,7 +58,7 @@ export const useStore = create<AppState>((set, get) => ({
   fetchAll: async () => {
     set({ loading: true, error: null });
     try {
-      const [rooms, bookings, products, activeOrders, matchmakings, stats] = await Promise.all([
+      const [rooms, bookings, products, activeOrdersRaw, matchmakings, stats] = await Promise.all([
         roomsApi.list(),
         bookingsApi.list(),
         productsApi.list(),
@@ -66,6 +66,11 @@ export const useStore = create<AppState>((set, get) => ({
         matchmakingApi.list(),
         statsApi.get(),
       ]);
+      const activeOrders = activeOrdersRaw.map((order) => ({
+        ...order,
+        autoRenew: order.autoRenew !== undefined ? order.autoRenew : true,
+        renewCount: order.renewCount !== undefined ? order.renewCount : 0,
+      }));
       set({ rooms, bookings, products, activeOrders, matchmakings, stats, loading: false });
     } catch (e: any) {
       set({ error: e.message, loading: false });
@@ -111,7 +116,12 @@ export const useStore = create<AppState>((set, get) => ({
   fetchActiveOrders: async () => {
     try {
       const activeOrders = await ordersApi.active();
-      set({ activeOrders });
+      const normalizedOrders = activeOrders.map((order) => ({
+        ...order,
+        autoRenew: order.autoRenew !== undefined ? order.autoRenew : true,
+        renewCount: order.renewCount !== undefined ? order.renewCount : 0,
+      }));
+      set({ activeOrders: normalizedOrders });
     } catch (e: any) {
       set({ error: e.message });
     }

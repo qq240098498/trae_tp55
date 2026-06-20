@@ -212,7 +212,9 @@
       "source": "walkin",
       "id": "mqlptmx57sze95",
       "status": "active",
-      "createdAt": "2026-06-20T02:05:13.673Z"
+      "createdAt": "2026-06-20T02:05:13.673Z",
+      "autoRenew": true,
+      "renewCount": 0
     },
     {
       "roomId": "mqlp6i0278006t",
@@ -225,7 +227,9 @@
       "source": "walkin",
       "id": "mqlptqxg3p657p",
       "status": "active",
-      "createdAt": "2026-06-20T02:05:18.868Z"
+      "createdAt": "2026-06-20T02:05:18.868Z",
+      "autoRenew": true,
+      "renewCount": 0
     },
     {
       "roomId": "mqlp6i02o625bf",
@@ -238,7 +242,9 @@
       "source": "walkin",
       "id": "mqlq1q7ez7g413",
       "status": "active",
-      "createdAt": "2026-06-20T02:11:31.178Z"
+      "createdAt": "2026-06-20T02:11:31.178Z",
+      "autoRenew": true,
+      "renewCount": 0
     },
     {
       "roomId": "mqlp6i02lz33ui",
@@ -251,7 +257,9 @@
       "source": "walkin",
       "id": "mqlq469u6e9ufp",
       "status": "active",
-      "createdAt": "2026-06-20T02:13:25.315Z"
+      "createdAt": "2026-06-20T02:13:25.315Z",
+      "autoRenew": true,
+      "renewCount": 0
     }
   ],
   "matchmakings": [

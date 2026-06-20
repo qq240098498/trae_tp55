@@ -1,3 +1,4 @@
+
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -26,12 +27,31 @@ function ensureDataDir() {
   }
 }
 
+function migrateDatabase(db: Database): Database {
+  let migrated = false;
+  for (const order of db.orders) {
+    if (order.autoRenew === undefined) {
+      (order as any).autoRenew = true;
+      migrated = true;
+    }
+    if (order.renewCount === undefined) {
+      (order as any).renewCount = 0;
+      migrated = true;
+    }
+  }
+  if (migrated) {
+    saveDatabase(db);
+  }
+  return db;
+}
+
 function loadDatabase(): Database {
   ensureDataDir();
   if (fs.existsSync(DATA_FILE)) {
     try {
       const data = fs.readFileSync(DATA_FILE, 'utf-8');
-      return JSON.parse(data);
+      const db = JSON.parse(data);
+      return migrateDatabase(db);
     } catch {
       return createInitialDatabase();
     }
