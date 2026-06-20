@@ -125,6 +125,42 @@
       "id": "mqm47178camvdw",
       "status": "idle",
       "createdAt": "2026-06-20T08:47:33.332Z"
+    },
+    {
+      "roomNumber": "T901",
+      "type": "mahjong",
+      "capacity": 4,
+      "hourlyRate": 48,
+      "id": "mqm5xg3cxjp6ko",
+      "status": "idle",
+      "createdAt": "2026-06-20T09:36:05.304Z"
+    },
+    {
+      "roomNumber": "Z001",
+      "type": "mahjong",
+      "capacity": 4,
+      "hourlyRate": 48,
+      "id": "mqm5zj6p205o9t",
+      "status": "idle",
+      "createdAt": "2026-06-20T09:37:42.625Z"
+    },
+    {
+      "roomNumber": "TEST01-EDITED",
+      "type": "mahjong",
+      "capacity": 4,
+      "hourlyRate": 48,
+      "id": "mqm6hqkusovofy",
+      "status": "idle",
+      "createdAt": "2026-06-20T09:51:52.014Z"
+    },
+    {
+      "roomNumber": "TEST02",
+      "type": "mahjong",
+      "capacity": 4,
+      "hourlyRate": 48,
+      "id": "mqm6x5yxvlrli2",
+      "status": "idle",
+      "createdAt": "2026-06-20T10:03:51.802Z"
     }
   ],
   "bookings": [],
