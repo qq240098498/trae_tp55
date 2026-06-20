@@ -64,6 +64,8 @@ export interface Order {
   startTime: string;
   endTime?: string;
   durationHours?: number;
+  bookedHours?: number;
+  autoRenew: boolean;
   baseAmount: number;
   items: OrderItem[];
   itemsAmount: number;
@@ -76,6 +78,7 @@ export interface Order {
   bookingId?: string;
   createdAt: string;
   completedAt?: string;
+  renewCount: number;
 }
 
 export interface Stats {

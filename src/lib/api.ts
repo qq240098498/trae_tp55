@@ -51,12 +51,16 @@ export const ordersApi = {
   list: () => request<Order[]>('/orders'),
   active: () => request<Order[]>('/orders/active'),
   get: (id: string) => request<Order>(`/orders/${id}`),
-  create: (data: { roomId: string; customerName?: string; customerCount: number; source?: 'walkin' | 'booking'; bookingId?: string }) =>
+  create: (data: { roomId: string; customerName?: string; customerCount: number; source?: 'walkin' | 'booking'; bookingId?: string; bookedHours?: number; autoRenew?: boolean }) =>
     request<Order>('/orders', { method: 'POST', body: JSON.stringify(data) }),
   updateItems: (id: string, items: OrderItem[]) =>
     request<Order>(`/orders/${id}`, { method: 'PUT', body: JSON.stringify({ items }) }),
   checkout: (id: string, data: { discount?: number; paymentMethod: PaymentMethod }) =>
     request<Order>(`/orders/${id}/checkout`, { method: 'POST', body: JSON.stringify(data) }),
+  renew: (id: string, hours: number = 1) =>
+    request<Order>(`/orders/${id}/renew`, { method: 'POST', body: JSON.stringify({ hours }) }),
+  setAutoRenew: (id: string, autoRenew: boolean) =>
+    request<Order>(`/orders/${id}/auto-renew`, { method: 'PUT', body: JSON.stringify({ autoRenew }) }),
 };
 
 export const statsApi = {

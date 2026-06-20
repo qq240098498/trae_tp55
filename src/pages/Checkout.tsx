@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Plus,
@@ -15,6 +15,8 @@ import {
   Smartphone,
   CreditCard as CardIcon,
   Trash2,
+  RefreshCw,
+  AlertTriangle,
 } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import {
@@ -32,6 +34,8 @@ import {
   calculateDuration,
   formatTime,
   formatDateTime,
+  getRemainingMinutes,
+  formatRemainingTime,
 } from '@shared/utils';
 import Modal from '@/components/Modal';
 
@@ -45,6 +49,8 @@ export default function Checkout() {
     createOrder,
     updateOrderItems,
     checkoutOrder,
+    renewOrder,
+    setOrderAutoRenew,
   } = useStore();
 
   const [currentOrderId, setCurrentOrderId] = useState<string>(orderId || '');
@@ -55,10 +61,16 @@ export default function Checkout() {
   const [discount, setDiscount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('wechat');
   const [elapsed, setElapsed] = useState(0);
+  const [remaining, setRemaining] = useState<number | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<ProductCategory | 'all'>('all');
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
   const [receiptModalOpen, setReceiptModalOpen] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
+  const [bookedHours, setBookedHours] = useState<number>(2);
+  const [enableBookedHours, setEnableBookedHours] = useState(false);
+  const [autoRenew, setAutoRenew] = useState(true);
+  const [renewModalOpen, setRenewModalOpen] = useState(false);
+  const autoRenewTriggeredRef = useRef<Set<string>>(new Set());
 
   const currentOrder = activeOrders.find((o) => o.id === currentOrderId);
   const targetRoomId = currentOrder?.roomId || selectedRoom;
@@ -83,11 +95,47 @@ export default function Checkout() {
     if (!currentOrder) return;
     const update = () => {
       setElapsed(calculateDuration(currentOrder.startTime, new Date()));
+      setRemaining(getRemainingMinutes(currentOrder.startTime, currentOrder.bookedHours));
     };
     update();
     const timer = setInterval(update, 1000);
     return () => clearInterval(timer);
-  }, [currentOrder?.id, currentOrder?.startTime]);
+  }, [currentOrder?.id, currentOrder?.startTime, currentOrder?.bookedHours]);
+
+  useEffect(() => {
+    if (!currentOrder || !currentOrder.bookedHours || !currentOrder.autoRenew) return;
+
+    const checkAutoRenew = () => {
+      const rem = getRemainingMinutes(currentOrder.startTime, currentOrder.bookedHours);
+      if (rem !== null && rem <= 0 && !autoRenewTriggeredRef.current.has(currentOrder.id)) {
+        autoRenewTriggeredRef.current.add(currentOrder.id);
+        renewOrder(currentOrder.id, 1).catch(() => {});
+      }
+    };
+
+    checkAutoRenew();
+    const timer = setInterval(checkAutoRenew, 10000);
+    return () => clearInterval(timer);
+  }, [currentOrder?.id, currentOrder?.bookedHours, currentOrder?.autoRenew, renewOrder]);
+
+  const handleRenew = async (hours: number = 1) => {
+    if (!currentOrder) return;
+    try {
+      await renewOrder(currentOrder.id, hours);
+      setRenewModalOpen(false);
+    } catch (e: any) {
+      alert(e.message);
+    }
+  };
+
+  const handleToggleAutoRenew = async () => {
+    if (!currentOrder) return;
+    try {
+      await setOrderAutoRenew(currentOrder.id, !currentOrder.autoRenew);
+    } catch (e: any) {
+      alert(e.message);
+    }
+  };
 
   useEffect(() => {
     if (!currentOrder || orderItems.length === 0) return;
@@ -147,6 +195,8 @@ export default function Checkout() {
         customerName: customerName || undefined,
         customerCount,
         source: 'walkin',
+        bookedHours: enableBookedHours ? bookedHours : undefined,
+        autoRenew: enableBookedHours ? autoRenew : true,
       });
       setCurrentOrderId(order.id);
     } catch (e: any) {
@@ -226,7 +276,7 @@ export default function Checkout() {
                 </div>
               </div>
 
-              <div className="mb-8">
+              <div className="mb-6">
                 <label className="label-text">客户姓名（选填）</label>
                 <input
                   type="text"
@@ -235,6 +285,67 @@ export default function Checkout() {
                   className="input-field max-w-md"
                   placeholder="用于账单记录"
                 />
+              </div>
+
+              <div className="mb-8 p-5 rounded-2xl bg-gradient-to-br from-cream-50 to-gold-50 border border-gold-200/50">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-gold" />
+                    <h4 className="font-serif text-lg font-bold text-primary">预定时长</h4>
+                  </div>
+                  <button
+                    onClick={() => setEnableBookedHours(!enableBookedHours)}
+                    className={`relative w-12 h-7 rounded-full transition-colors ${
+                      enableBookedHours ? 'bg-primary' : 'bg-ink-200'
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${
+                        enableBookedHours ? 'left-5' : 'left-0.5'
+                      }`}
+                    />
+                  </button>
+                </div>
+                {enableBookedHours && (
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm text-ink-600 mb-2">选择时长（小时）</p>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[1, 2, 3, 4].map((h) => (
+                          <button
+                            key={h}
+                            onClick={() => setBookedHours(h)}
+                            className={`py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                              bookedHours === h
+                                ? 'bg-primary text-gold shadow-gold'
+                                : 'bg-white text-ink-600 border border-cream-200 hover:border-gold-300'
+                            }`}
+                          >
+                            {h}小时
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-ink-600">自动续费（超时自动续1小时）</span>
+                      <button
+                        onClick={() => setAutoRenew(!autoRenew)}
+                        className={`relative w-12 h-7 rounded-full transition-colors ${
+                          autoRenew ? 'bg-emerald-500' : 'bg-ink-200'
+                        }`}
+                      >
+                        <span
+                          className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${
+                            autoRenew ? 'left-5' : 'left-0.5'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                    <p className="text-sm text-ink-500">
+                      预计费用：<span className="font-semibold text-gold-700">{formatCurrency(room?.hourlyRate || 0)}</span> × {bookedHours}小时 = <span className="font-serif font-bold text-lg gold-gradient-text">{formatCurrency((room?.hourlyRate || 0) * bookedHours)}</span>
+                    </p>
+                  </div>
+                )}
               </div>
 
               <button
@@ -284,8 +395,67 @@ export default function Checkout() {
                     <p className="text-xs text-ink-400 mt-1">
                       开台于 {formatTime(currentOrder.startTime)}
                     </p>
+                    {remaining !== null && (
+                      <div className={`mt-2 px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 ${
+                        remaining <= 0
+                          ? 'bg-red-50 text-red-600'
+                          : remaining <= 15
+                          ? 'bg-amber-50 text-amber-600'
+                          : 'bg-emerald-50 text-emerald-600'
+                      }`}>
+                        <Clock className="w-3.5 h-3.5" />
+                        <span className="text-sm font-semibold">
+                          {remaining <= 0 ? '超时 ' : '剩余 '}
+                          {formatRemainingTime(remaining)}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
+
+                {currentOrder.bookedHours && (
+                  <div className="mb-5 p-4 rounded-2xl border-2 border-gold-200 bg-gradient-to-br from-gold-50 to-cream-50">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-5 h-5 text-gold" />
+                        <span className="font-semibold text-primary">预订时长：{currentOrder.bookedHours}小时</span>
+                        {currentOrder.renewCount > 0 && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-gold-200 text-gold-800">
+                            已续{currentOrder.renewCount}次
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => setRenewModalOpen(true)}
+                        className="px-4 py-2 rounded-xl bg-gradient-to-br from-primary to-primary-700 text-gold text-sm font-semibold shadow-gold hover:shadow-lg transition-all flex items-center gap-1.5"
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                        续时
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-ink-600">自动续费（超时自动续1小时）</span>
+                      <button
+                        onClick={handleToggleAutoRenew}
+                        className={`relative w-12 h-7 rounded-full transition-colors ${
+                          currentOrder.autoRenew ? 'bg-emerald-500' : 'bg-ink-200'
+                        }`}
+                      >
+                        <span
+                          className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${
+                            currentOrder.autoRenew ? 'left-5' : 'left-0.5'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                    {!currentOrder.autoRenew && (
+                      <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                        自动续费已关闭，超时将自动提醒结账
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 <div className="grid grid-cols-3 gap-4 p-5 rounded-2xl bg-gradient-to-br from-cream-50 to-gold-50 border border-gold-200/50">
                   <div className="text-center">
@@ -701,6 +871,56 @@ export default function Checkout() {
             </button>
           </div>
         )}
+      </Modal>
+
+      <Modal
+        open={renewModalOpen}
+        onClose={() => setRenewModalOpen(false)}
+        title="续时"
+        size="sm"
+      >
+        <div className="space-y-5">
+          {currentOrder && room && (
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-cream-50 to-gold-50 border border-gold-200/50">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">{ROOM_TYPE_ICONS[room.type]}</span>
+                <div>
+                  <h4 className="font-serif text-lg font-bold text-primary">
+                    {room.roomNumber}
+                  </h4>
+                  <p className="text-sm text-ink-500">
+                    当前已预订 {currentOrder.bookedHours} 小时 · {formatCurrency(room.hourlyRate)}/小时
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div>
+            <p className="text-sm font-medium text-ink-700 mb-3">选择续时时长：</p>
+            <div className="grid grid-cols-3 gap-3">
+              {[1, 2, 3].map((h) => (
+                <button
+                  key={h}
+                  onClick={() => handleRenew(h)}
+                  className="py-4 rounded-xl bg-gradient-to-br from-primary to-primary-700 text-gold font-semibold shadow-gold hover:shadow-lg transition-all flex flex-col items-center gap-1"
+                >
+                  <RefreshCw className="w-5 h-5" />
+                  <span className="text-lg">{h}小时</span>
+                  <span className="text-xs opacity-80">
+                    {formatCurrency((room?.hourlyRate || 0) * h)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button onClick={() => setRenewModalOpen(false)} className="flex-1 btn-ghost">
+              取消
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

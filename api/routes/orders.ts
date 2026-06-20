@@ -20,7 +20,7 @@ router.get('/:id', (req, res) => {
 });
 
 router.post('/', (req, res) => {
-  const { roomId, customerName, customerCount, source, bookingId } = req.body;
+  const { roomId, customerName, customerCount, source, bookingId, bookedHours, autoRenew } = req.body;
   if (!roomId || !customerCount) {
     return res.status(400).json({ error: '缺少必填字段' });
   }
@@ -35,18 +35,53 @@ router.post('/', (req, res) => {
     customerName,
     customerCount: Number(customerCount),
     startTime,
+    bookedHours: bookedHours ? Number(bookedHours) : undefined,
+    autoRenew: autoRenew !== undefined ? Boolean(autoRenew) : true,
     baseAmount: 0,
     items: [],
     itemsAmount: 0,
     totalAmount: 0,
     source: source || 'walkin',
     bookingId,
+    renewCount: 0,
   });
   store.updateRoom(roomId, { status: 'occupied' });
   if (bookingId) {
     store.updateBooking(bookingId, { status: 'completed' });
   }
   res.status(201).json(order);
+});
+
+router.post('/:id/renew', (req, res) => {
+  const order = store.getOrderById(req.params.id);
+  if (!order) return res.status(404).json({ error: '订单不存在' });
+  if (order.status !== 'active') {
+    return res.status(400).json({ error: '订单已结束，无法续时' });
+  }
+  const { hours = 1 } = req.body;
+  const renewHours = Number(hours);
+  if (renewHours <= 0) {
+    return res.status(400).json({ error: '续时时长必须大于0' });
+  }
+  const currentBooked = order.bookedHours || 0;
+  const updated = store.updateOrder(req.params.id, {
+    bookedHours: currentBooked + renewHours,
+    renewCount: (order.renewCount || 0) + 1,
+  });
+  res.json(updated);
+});
+
+router.put('/:id/auto-renew', (req, res) => {
+  const order = store.getOrderById(req.params.id);
+  if (!order) return res.status(404).json({ error: '订单不存在' });
+  if (order.status !== 'active') {
+    return res.status(400).json({ error: '订单已结束' });
+  }
+  const { autoRenew } = req.body;
+  const updated = store.updateOrder(req.params.id, {
+    autoRenew: Boolean(autoRenew),
+  });
+  res.json(updated);
 });
 
 router.put('/:id', (req, res) => {

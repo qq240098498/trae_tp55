@@ -30,9 +30,11 @@ interface AppState {
   createProduct: (data: Omit<Product, 'id' | 'createdAt'>) => Promise<void>;
   updateProduct: (id: string, data: Partial<Omit<Product, 'id' | 'createdAt'>>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
-  createOrder: (data: { roomId: string; customerName?: string; customerCount: number; source?: 'walkin' | 'booking'; bookingId?: string }) => Promise<Order>;
+  createOrder: (data: { roomId: string; customerName?: string; customerCount: number; source?: 'walkin' | 'booking'; bookingId?: string; bookedHours?: number; autoRenew?: boolean }) => Promise<Order>;
   updateOrderItems: (id: string, items: OrderItem[]) => Promise<void>;
   checkoutOrder: (id: string, data: { discount?: number; paymentMethod: any }) => Promise<Order>;
+  renewOrder: (id: string, hours?: number) => Promise<Order>;
+  setOrderAutoRenew: (id: string, autoRenew: boolean) => Promise<Order>;
   getActiveOrderByRoom: (roomId: string) => Order | undefined;
   createMatchmaking: (data: { roomType: RoomType; hostName: string; hostPhone: string; totalPeopleNeeded: number; note?: string }) => Promise<void>;
   deleteMatchmaking: (id: string) => Promise<void>;
@@ -208,6 +210,18 @@ export const useStore = create<AppState>((set, get) => ({
     await get().fetchActiveOrders();
     await get().fetchRooms();
     await get().fetchStats();
+    return order;
+  },
+
+  renewOrder: async (id, hours = 1) => {
+    const order = await ordersApi.renew(id, hours);
+    await get().fetchActiveOrders();
+    return order;
+  },
+
+  setOrderAutoRenew: async (id, autoRenew) => {
+    const order = await ordersApi.setAutoRenew(id, autoRenew);
+    await get().fetchActiveOrders();
     return order;
   },
 

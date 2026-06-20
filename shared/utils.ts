@@ -65,3 +65,28 @@ export function isToday(dateStr: string): boolean {
     d.getDate() === today.getDate()
   );
 }
+
+export function getExpectedEndTime(startTime: string, bookedHours?: number): Date | null {
+  if (!bookedHours || bookedHours <= 0) return null;
+  const start = new Date(startTime);
+  return new Date(start.getTime() + bookedHours * 60 * 60 * 1000);
+}
+
+export function getRemainingMinutes(startTime: string, bookedHours?: number): number | null {
+  const endTime = getExpectedEndTime(startTime, bookedHours);
+  if (!endTime) return null;
+  const now = new Date();
+  const remaining = (endTime.getTime() - now.getTime()) / (1000 * 60);
+  return remaining;
+}
+
+export function formatRemainingTime(minutes: number): string {
+  const absMinutes = Math.abs(minutes);
+  const hours = Math.floor(absMinutes / 60);
+  const mins = Math.floor(absMinutes % 60);
+  const secs = Math.floor((absMinutes % 1) * 60);
+  if (hours > 0) {
+    return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
