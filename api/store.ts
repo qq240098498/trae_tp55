@@ -2,8 +2,8 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import type { Room, Booking, Product, Order, Matchmaking, MatchmakingApplicant, CustomerPreference, RoomType } from '../shared/types.js';
-import { generateId } from '../shared/utils.js';
+import type { Room, Booking, Product, Order, Matchmaking, MatchmakingApplicant, CustomerPreference, RoomType, DailySettlement, DailySettlementRoomItem, DailySettlementItem, DailySettlementPayment, PaymentMethod } from '../shared/types.js';
+import { generateId, formatDate } from '../shared/utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,6 +18,7 @@ interface Database {
   orders: Order[];
   matchmakings: Matchmaking[];
   customerPreferences: CustomerPreference[];
+  settlements: DailySettlement[];
 }
 
 let db: Database = loadDatabase();
@@ -52,6 +53,10 @@ function migrateDatabase(db: any): Database {
   }
   if (!Array.isArray(db.customerPreferences)) {
     db.customerPreferences = [];
+    migrated = true;
+  }
+  if (!Array.isArray(db.settlements)) {
+    db.settlements = [];
     migrated = true;
   }
   for (const order of db.orders) {
@@ -138,6 +143,7 @@ function createInitialDatabase(): Database {
     orders: [],
     matchmakings: [],
     customerPreferences: [],
+    settlements: [],
   };
 }
 
@@ -451,5 +457,121 @@ export const store = {
     return Array.from(scores.entries())
       .map(([roomId, score]) => ({ roomId, score }))
       .sort((a, b) => b.score - a.score);
+  },
+
+  getSettlements(): DailySettlement[] {
+    return db.settlements;
+  },
+
+  getSettlementById(id: string): DailySettlement | undefined {
+    return db.settlements.find((s) => s.createdAt === id);
+  },
+
+  getSettlementByDate(date: string): DailySettlement | undefined {
+    return db.settlements.find((s) => s.date === date);
+  },
+
+  createDailySettlement(dateStr?: string): DailySettlement {
+    const targetDate = dateStr ? new Date(dateStr) : new Date();
+    const date = formatDate(targetDate);
+    const start = new Date(targetDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(targetDate);
+    end.setHours(23, 59, 59, 999);
+    const startTime = start.getTime();
+    const endTime = end.getTime();
+
+    const completedOrders = db.orders.filter((o) => {
+      if (o.status !== 'completed') return false;
+      const completedAt = o.completedAt ? new Date(o.completedAt).getTime() : new Date(o.createdAt).getTime();
+      return completedAt >= startTime && completedAt <= endTime;
+    });
+
+    const roomOrders: DailySettlementRoomItem[] = completedOrders.map((order) => {
+      const room = db.rooms.find((r) => r.id === order.roomId);
+      return {
+        orderId: order.id,
+        roomId: order.roomId,
+        roomNumber: room?.roomNumber || '未知',
+        roomType: room?.type || 'mahjong',
+        customerName: order.customerName,
+        customerCount: order.customerCount,
+        startTime: order.startTime,
+        endTime: order.endTime || order.completedAt || order.createdAt,
+        durationHours: order.durationHours || 0,
+        baseAmount: order.baseAmount,
+        itemsAmount: order.itemsAmount,
+        discount: order.discount || 0,
+        totalAmount: order.totalAmount,
+        paidAmount: order.paidAmount || order.totalAmount,
+        paymentMethod: order.paymentMethod || 'cash',
+        items: order.items,
+      };
+    });
+
+    const itemMap = new Map<string, DailySettlementItem>();
+    for (const order of completedOrders) {
+      for (const item of order.items) {
+        const existing = itemMap.get(item.productId);
+        const product = db.products.find((p) => p.id === item.productId);
+        if (existing) {
+          existing.quantity += item.quantity;
+          existing.totalAmount += item.price * item.quantity;
+        } else {
+          itemMap.set(item.productId, {
+            productId: item.productId,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            totalAmount: item.price * item.quantity,
+            category: product?.category || 'other',
+          });
+        }
+      }
+    }
+    const items = Array.from(itemMap.values()).sort((a, b) => b.totalAmount - a.totalAmount);
+
+    const paymentMap = new Map<PaymentMethod, DailySettlementPayment>();
+    for (const order of completedOrders) {
+      const method = order.paymentMethod || 'cash';
+      const existing = paymentMap.get(method);
+      if (existing) {
+        existing.count += 1;
+        existing.amount += order.paidAmount || order.totalAmount;
+      } else {
+        paymentMap.set(method, {
+          method,
+          count: 1,
+          amount: order.paidAmount || order.totalAmount,
+        });
+      }
+    }
+    const payments = Array.from(paymentMap.values());
+
+    const totalBaseAmount = roomOrders.reduce((sum, o) => sum + o.baseAmount, 0);
+    const totalItemsAmount = roomOrders.reduce((sum, o) => sum + o.itemsAmount, 0);
+    const totalDiscount = roomOrders.reduce((sum, o) => sum + o.discount, 0);
+    const totalRevenue = roomOrders.reduce((sum, o) => sum + o.paidAmount, 0);
+    const cashAmount = payments.filter((p) => p.method === 'cash').reduce((sum, p) => sum + p.amount, 0);
+    const scanAmount = payments.filter((p) => p.method === 'wechat' || p.method === 'alipay').reduce((sum, p) => sum + p.amount, 0);
+
+    const settlement: DailySettlement = {
+      date,
+      orders: roomOrders,
+      items,
+      payments,
+      totalRooms: roomOrders.length,
+      totalBaseAmount,
+      totalItemsAmount,
+      totalDiscount,
+      totalRevenue,
+      cashAmount,
+      scanAmount,
+      createdAt: new Date().toISOString(),
+    };
+
+    db.settlements.push(settlement);
+    saveDatabase();
+    return settlement;
   },
 };

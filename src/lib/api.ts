@@ -1,4 +1,4 @@
-import type { Room, Booking, Product, Order, Stats, OrderItem, PaymentMethod, Matchmaking, MatchmakingApplicant, RoomType, CustomerPreference } from '@shared/types';
+import type { Room, Booking, Product, Order, Stats, OrderItem, PaymentMethod, Matchmaking, MatchmakingApplicant, RoomType, CustomerPreference, DailySettlement } from '@shared/types';
 
 const API_BASE = '/api';
 
@@ -97,4 +97,12 @@ export const customerPreferencesApi = {
   updateByPhone: (phone: string, data: Partial<Omit<CustomerPreference, 'id' | 'createdAt' | 'updatedAt'>>) =>
     request<CustomerPreference>(`/customer-preferences/phone/${phone}`, { method: 'PUT', body: JSON.stringify(data) }),
   remove: (id: string) => request<{ success: boolean }>(`/customer-preferences/${id}`, { method: 'DELETE' }),
+};
+
+export const settlementsApi = {
+  list: () => request<DailySettlement[]>('/settlements'),
+  get: (id: string) => request<DailySettlement>(`/settlements/${id}`),
+  getByDate: (date: string) => request<DailySettlement>(`/settlements/date/${date}`),
+  create: (date?: string) =>
+    request<DailySettlement>('/settlements', { method: 'POST', body: JSON.stringify({ date }) }),
 };

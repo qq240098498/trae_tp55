@@ -181,3 +181,52 @@ export interface CustomerPreference {
 }
 
 export const CUSTOMER_PREFERENCE_TEA_OPTIONS = ['铁观音', '普洱茶', '菊花茶', '绿茶', '可乐', '雪碧', '矿泉水', '红牛'];
+
+export interface DailySettlementRoomItem {
+  orderId: string;
+  roomId: string;
+  roomNumber: string;
+  roomType: RoomType;
+  customerName?: string;
+  customerCount: number;
+  startTime: string;
+  endTime: string;
+  durationHours: number;
+  baseAmount: number;
+  itemsAmount: number;
+  discount: number;
+  totalAmount: number;
+  paidAmount: number;
+  paymentMethod: PaymentMethod;
+  items: OrderItem[];
+}
+
+export interface DailySettlementItem {
+  productId: string;
+  name: string;
+  price: number;
+  quantity: number;
+  totalAmount: number;
+  category: ProductCategory;
+}
+
+export interface DailySettlementPayment {
+  method: PaymentMethod;
+  count: number;
+  amount: number;
+}
+
+export interface DailySettlement {
+  date: string;
+  orders: DailySettlementRoomItem[];
+  items: DailySettlementItem[];
+  payments: DailySettlementPayment[];
+  totalRooms: number;
+  totalBaseAmount: number;
+  totalItemsAmount: number;
+  totalDiscount: number;
+  totalRevenue: number;
+  cashAmount: number;
+  scanAmount: number;
+  createdAt: string;
+}

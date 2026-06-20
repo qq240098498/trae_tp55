@@ -9,6 +9,7 @@ import {
   Sparkles,
   RefreshCw,
   Users,
+  Calculator,
 } from 'lucide-react';
 import { useEffect } from 'react';
 import { useStore } from '@/store/useStore';
@@ -20,6 +21,7 @@ const navItems = [
   { to: '/matchmaking', icon: Users, label: '拼桌搭子' },
   { to: '/checkout', icon: CreditCard, label: '开台结算' },
   { to: '/products', icon: Coffee, label: '商品管理' },
+  { to: '/daily-settlement', icon: Calculator, label: '日结扎账' },
 ];
 
 export default function Layout() {

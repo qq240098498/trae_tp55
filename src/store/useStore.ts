@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type { Room, Booking, Product, Order, Stats, OrderItem, Matchmaking, MatchmakingApplicant, RoomType, CustomerPreference } from '@shared/types';
-import { roomsApi, bookingsApi, productsApi, ordersApi, statsApi, matchmakingApi, customerPreferencesApi } from '@/lib/api';
+import type { Room, Booking, Product, Order, Stats, OrderItem, Matchmaking, MatchmakingApplicant, RoomType, CustomerPreference, DailySettlement } from '@shared/types';
+import { roomsApi, bookingsApi, productsApi, ordersApi, statsApi, matchmakingApi, customerPreferencesApi, settlementsApi } from '@/lib/api';
 
 interface AppState {
   rooms: Room[];
@@ -13,6 +13,8 @@ interface AppState {
   currentCustomerPreference: CustomerPreference | null;
   recommendedRooms: { roomId: string; score: number }[];
   stats: Stats | null;
+  settlements: DailySettlement[];
+  currentSettlement: DailySettlement | null;
   loading: boolean;
   error: string | null;
   fetchAll: () => Promise<void>;
@@ -53,6 +55,10 @@ interface AppState {
   updateCustomerPreferenceByPhone: (phone: string, data: Partial<Omit<CustomerPreference, 'id' | 'createdAt' | 'updatedAt'>>) => Promise<void>;
   deleteCustomerPreference: (id: string) => Promise<void>;
   clearCurrentCustomerPreference: () => void;
+  fetchSettlements: () => Promise<void>;
+  fetchSettlementByDate: (date: string) => Promise<DailySettlement | null>;
+  createDailySettlement: (date?: string) => Promise<DailySettlement>;
+  clearCurrentSettlement: () => void;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -66,6 +72,8 @@ export const useStore = create<AppState>((set, get) => ({
   currentCustomerPreference: null,
   recommendedRooms: [],
   stats: null,
+  settlements: [],
+  currentSettlement: null,
   loading: false,
   error: null,
 
@@ -342,5 +350,36 @@ export const useStore = create<AppState>((set, get) => ({
 
   clearCurrentCustomerPreference: () => {
     set({ currentCustomerPreference: null, recommendedRooms: [] });
+  },
+
+  fetchSettlements: async () => {
+    try {
+      const settlements = await settlementsApi.list();
+      set({ settlements });
+    } catch (e: any) {
+      set({ error: e.message });
+    }
+  },
+
+  fetchSettlementByDate: async (date) => {
+    try {
+      const settlement = await settlementsApi.getByDate(date);
+      set({ currentSettlement: settlement });
+      return settlement;
+    } catch {
+      set({ currentSettlement: null });
+      return null;
+    }
+  },
+
+  createDailySettlement: async (date) => {
+    const settlement = await settlementsApi.create(date);
+    await get().fetchSettlements();
+    set({ currentSettlement: settlement });
+    return settlement;
+  },
+
+  clearCurrentSettlement: () => {
+    set({ currentSettlement: null });
   },
 }));

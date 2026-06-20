@@ -19,6 +19,7 @@ import orderRoutes from './routes/orders.js'
 import statsRoutes from './routes/stats.js'
 import matchmakingRoutes from './routes/matchmaking.js'
 import customerPreferenceRoutes from './routes/customer-preferences.js'
+import settlementRoutes from './routes/settlements.js'
 
 // for esm mode
 const __filename = fileURLToPath(import.meta.url)
@@ -44,6 +45,7 @@ app.use('/api/orders', orderRoutes)
 app.use('/api/stats', statsRoutes)
 app.use('/api/matchmaking', matchmakingRoutes)
 app.use('/api/customer-preferences', customerPreferenceRoutes)
+app.use('/api/settlements', settlementRoutes)
 
 /**
  * health
