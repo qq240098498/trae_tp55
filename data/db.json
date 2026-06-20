@@ -253,5 +253,19 @@
       "status": "active",
       "createdAt": "2026-06-20T02:13:25.315Z"
     }
+  ],
+  "matchmakings": [
+    {
+      "roomType": "mahjong",
+      "hostName": "张三",
+      "hostPhone": "13800138000",
+      "totalPeopleNeeded": 4,
+      "note": "周末麻将娱乐局，缺3人！",
+      "id": "mqlsccgcdvvfn1",
+      "status": "recruiting",
+      "applicants": [],
+      "currentPeople": 1,
+      "createdAt": "2026-06-20T03:15:45.804Z"
+    }
   ]
 }

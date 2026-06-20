@@ -1,4 +1,4 @@
-import type { Room, Booking, Product, Order, Stats, OrderItem, PaymentMethod } from '@shared/types';
+import type { Room, Booking, Product, Order, Stats, OrderItem, PaymentMethod, Matchmaking, MatchmakingApplicant, RoomType } from '@shared/types';
 
 const API_BASE = '/api';
 
@@ -61,4 +61,22 @@ export const ordersApi = {
 
 export const statsApi = {
   get: () => request<Stats>('/stats'),
+};
+
+export const matchmakingApi = {
+  list: () => request<Matchmaking[]>('/matchmaking'),
+  get: (id: string) => request<Matchmaking>(`/matchmaking/${id}`),
+  create: (data: { roomType: RoomType; hostName: string; hostPhone: string; totalPeopleNeeded: number; note?: string }) =>
+    request<Matchmaking>('/matchmaking', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: Partial<Omit<Matchmaking, 'id' | 'createdAt'>>) =>
+    request<Matchmaking>(`/matchmaking/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  remove: (id: string) => request<{ success: boolean }>(`/matchmaking/${id}`, { method: 'DELETE' }),
+  apply: (id: string, data: { name: string; phone: string; peopleCount: number }) =>
+    request<Matchmaking>(`/matchmaking/${id}/apply`, { method: 'POST', body: JSON.stringify(data) }),
+  updateApplicantStatus: (id: string, applicantId: string, status: MatchmakingApplicant['status']) =>
+    request<Matchmaking>(`/matchmaking/${id}/applicants/${applicantId}`, { method: 'PUT', body: JSON.stringify({ status }) }),
+  confirm: (id: string, roomId: string) =>
+    request<Matchmaking>(`/matchmaking/${id}/confirm`, { method: 'POST', body: JSON.stringify({ roomId }) }),
+  cancel: (id: string) =>
+    request<Matchmaking>(`/matchmaking/${id}/cancel`, { method: 'POST' }),
 };

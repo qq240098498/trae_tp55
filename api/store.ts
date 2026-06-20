@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import type { Room, Booking, Product, Order } from '../shared/types.js';
+import type { Room, Booking, Product, Order, Matchmaking, MatchmakingApplicant } from '../shared/types.js';
 import { generateId } from '../shared/utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -15,6 +15,7 @@ interface Database {
   bookings: Booking[];
   products: Product[];
   orders: Order[];
+  matchmakings: Matchmaking[];
 }
 
 let db: Database = loadDatabase();
@@ -90,6 +91,7 @@ function createInitialDatabase(): Database {
       createdAt: now,
     })),
     orders: [],
+    matchmakings: [],
   };
 }
 
@@ -215,5 +217,87 @@ export const store = {
     db.orders[idx] = { ...db.orders[idx], ...data };
     saveDatabase();
     return db.orders[idx];
+  },
+
+  getMatchmakings(): Matchmaking[] {
+    return db.matchmakings;
+  },
+  getMatchmakingById(id: string): Matchmaking | undefined {
+    return db.matchmakings.find((m) => m.id === id);
+  },
+  createMatchmaking(data: Omit<Matchmaking, 'id' | 'createdAt' | 'status' | 'applicants' | 'currentPeople'>): Matchmaking {
+    const matchmaking: Matchmaking = {
+      ...data,
+      id: generateId(),
+      status: 'recruiting',
+      applicants: [],
+      currentPeople: 1,
+      createdAt: new Date().toISOString(),
+    };
+    db.matchmakings.push(matchmaking);
+    saveDatabase();
+    return matchmaking;
+  },
+  updateMatchmaking(id: string, data: Partial<Omit<Matchmaking, 'id' | 'createdAt'>>): Matchmaking | undefined {
+    const idx = db.matchmakings.findIndex((m) => m.id === id);
+    if (idx === -1) return undefined;
+    db.matchmakings[idx] = { ...db.matchmakings[idx], ...data };
+    saveDatabase();
+    return db.matchmakings[idx];
+  },
+  deleteMatchmaking(id: string): boolean {
+    const idx = db.matchmakings.findIndex((m) => m.id === id);
+    if (idx === -1) return false;
+    db.matchmakings.splice(idx, 1);
+    saveDatabase();
+    return true;
+  },
+  addApplicant(matchmakingId: string, data: Omit<MatchmakingApplicant, 'id' | 'appliedAt' | 'status'>): Matchmaking | undefined {
+    const idx = db.matchmakings.findIndex((m) => m.id === matchmakingId);
+    if (idx === -1) return undefined;
+    const applicant: MatchmakingApplicant = {
+      ...data,
+      id: generateId(),
+      status: 'pending',
+      appliedAt: new Date().toISOString(),
+    };
+    db.matchmakings[idx].applicants.push(applicant);
+    saveDatabase();
+    return db.matchmakings[idx];
+  },
+  updateApplicantStatus(matchmakingId: string, applicantId: string, status: MatchmakingApplicant['status']): Matchmaking | undefined {
+    const mIdx = db.matchmakings.findIndex((m) => m.id === matchmakingId);
+    if (mIdx === -1) return undefined;
+    const aIdx = db.matchmakings[mIdx].applicants.findIndex((a) => a.id === applicantId);
+    if (aIdx === -1) return undefined;
+    const applicant = db.matchmakings[mIdx].applicants[aIdx];
+    const oldStatus = applicant.status;
+    db.matchmakings[mIdx].applicants[aIdx] = { ...applicant, status };
+    if (oldStatus === 'approved' && status !== 'approved') {
+      db.matchmakings[mIdx].currentPeople = Math.max(1, db.matchmakings[mIdx].currentPeople - applicant.peopleCount);
+    }
+    if (oldStatus !== 'approved' && status === 'approved') {
+      db.matchmakings[mIdx].currentPeople += applicant.peopleCount;
+    }
+    if (db.matchmakings[mIdx].currentPeople >= db.matchmakings[mIdx].totalPeopleNeeded && db.matchmakings[mIdx].status === 'recruiting') {
+      db.matchmakings[mIdx].status = 'full';
+    }
+    if (db.matchmakings[mIdx].currentPeople < db.matchmakings[mIdx].totalPeopleNeeded && db.matchmakings[mIdx].status === 'full') {
+      db.matchmakings[mIdx].status = 'recruiting';
+    }
+    saveDatabase();
+    return db.matchmakings[mIdx];
+  },
+  confirmMatchmaking(id: string, roomId: string): Matchmaking | undefined {
+    const idx = db.matchmakings.findIndex((m) => m.id === id);
+    if (idx === -1) return undefined;
+    db.matchmakings[idx] = {
+      ...db.matchmakings[idx],
+      status: 'confirmed',
+      roomId,
+      confirmedAt: new Date().toISOString(),
+    };
+    saveDatabase();
+    return db.matchmakings[idx];
   },
 };

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type { Room, Booking, Product, Order, Stats, OrderItem } from '@shared/types';
-import { roomsApi, bookingsApi, productsApi, ordersApi, statsApi } from '@/lib/api';
+import type { Room, Booking, Product, Order, Stats, OrderItem, Matchmaking, MatchmakingApplicant, RoomType } from '@shared/types';
+import { roomsApi, bookingsApi, productsApi, ordersApi, statsApi, matchmakingApi } from '@/lib/api';
 
 interface AppState {
   rooms: Room[];
@@ -8,6 +8,7 @@ interface AppState {
   products: Product[];
   orders: Order[];
   activeOrders: Order[];
+  matchmakings: Matchmaking[];
   stats: Stats | null;
   loading: boolean;
   error: string | null;
@@ -17,6 +18,7 @@ interface AppState {
   fetchProducts: () => Promise<void>;
   fetchOrders: () => Promise<void>;
   fetchActiveOrders: () => Promise<void>;
+  fetchMatchmakings: () => Promise<void>;
   fetchStats: () => Promise<void>;
   createRoom: (data: Omit<Room, 'id' | 'createdAt' | 'status'>) => Promise<void>;
   updateRoom: (id: string, data: Partial<Omit<Room, 'id' | 'createdAt'>>) => Promise<void>;
@@ -32,6 +34,12 @@ interface AppState {
   updateOrderItems: (id: string, items: OrderItem[]) => Promise<void>;
   checkoutOrder: (id: string, data: { discount?: number; paymentMethod: any }) => Promise<Order>;
   getActiveOrderByRoom: (roomId: string) => Order | undefined;
+  createMatchmaking: (data: { roomType: RoomType; hostName: string; hostPhone: string; totalPeopleNeeded: number; note?: string }) => Promise<void>;
+  deleteMatchmaking: (id: string) => Promise<void>;
+  applyMatchmaking: (id: string, data: { name: string; phone: string; peopleCount: number }) => Promise<void>;
+  updateApplicantStatus: (matchmakingId: string, applicantId: string, status: MatchmakingApplicant['status']) => Promise<void>;
+  confirmMatchmaking: (id: string, roomId: string) => Promise<void>;
+  cancelMatchmaking: (id: string) => Promise<void>;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -40,6 +48,7 @@ export const useStore = create<AppState>((set, get) => ({
   products: [],
   orders: [],
   activeOrders: [],
+  matchmakings: [],
   stats: null,
   loading: false,
   error: null,
@@ -47,14 +56,15 @@ export const useStore = create<AppState>((set, get) => ({
   fetchAll: async () => {
     set({ loading: true, error: null });
     try {
-      const [rooms, bookings, products, activeOrders, stats] = await Promise.all([
+      const [rooms, bookings, products, activeOrders, matchmakings, stats] = await Promise.all([
         roomsApi.list(),
         bookingsApi.list(),
         productsApi.list(),
         ordersApi.active(),
+        matchmakingApi.list(),
         statsApi.get(),
       ]);
-      set({ rooms, bookings, products, activeOrders, stats, loading: false });
+      set({ rooms, bookings, products, activeOrders, matchmakings, stats, loading: false });
     } catch (e: any) {
       set({ error: e.message, loading: false });
     }
@@ -109,6 +119,15 @@ export const useStore = create<AppState>((set, get) => ({
     try {
       const stats = await statsApi.get();
       set({ stats });
+    } catch (e: any) {
+      set({ error: e.message });
+    }
+  },
+
+  fetchMatchmakings: async () => {
+    try {
+      const matchmakings = await matchmakingApi.list();
+      set({ matchmakings });
     } catch (e: any) {
       set({ error: e.message });
     }
@@ -194,5 +213,36 @@ export const useStore = create<AppState>((set, get) => ({
 
   getActiveOrderByRoom: (roomId) => {
     return get().activeOrders.find((o) => o.roomId === roomId);
+  },
+
+  createMatchmaking: async (data) => {
+    await matchmakingApi.create(data);
+    await get().fetchMatchmakings();
+  },
+
+  deleteMatchmaking: async (id) => {
+    await matchmakingApi.remove(id);
+    await get().fetchMatchmakings();
+  },
+
+  applyMatchmaking: async (id, data) => {
+    await matchmakingApi.apply(id, data);
+    await get().fetchMatchmakings();
+  },
+
+  updateApplicantStatus: async (matchmakingId, applicantId, status) => {
+    await matchmakingApi.updateApplicantStatus(matchmakingId, applicantId, status);
+    await get().fetchMatchmakings();
+  },
+
+  confirmMatchmaking: async (id, roomId) => {
+    await matchmakingApi.confirm(id, roomId);
+    await get().fetchMatchmakings();
+    await get().fetchRooms();
+  },
+
+  cancelMatchmaking: async (id) => {
+    await matchmakingApi.cancel(id);
+    await get().fetchMatchmakings();
   },
 }));

@@ -5,6 +5,7 @@ import Rooms from "@/pages/Rooms";
 import Bookings from "@/pages/Bookings";
 import Checkout from "@/pages/Checkout";
 import Products from "@/pages/Products";
+import Matchmaking from "@/pages/Matchmaking";
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/checkout/:orderId" element={<Checkout />} />
           <Route path="/products" element={<Products />} />
+          <Route path="/matchmaking" element={<Matchmaking />} />
         </Route>
       </Routes>
     </Router>

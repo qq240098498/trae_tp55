@@ -8,6 +8,7 @@ import {
   LogOut,
   Sparkles,
   RefreshCw,
+  Users,
 } from 'lucide-react';
 import { useEffect } from 'react';
 import { useStore } from '@/store/useStore';
@@ -16,6 +17,7 @@ const navItems = [
   { to: '/', icon: LayoutDashboard, label: '状态看板', end: true },
   { to: '/rooms', icon: Sofa, label: '包间管理' },
   { to: '/bookings', icon: CalendarDays, label: '预约管理' },
+  { to: '/matchmaking', icon: Users, label: '拼桌搭子' },
   { to: '/checkout', icon: CreditCard, label: '开台结算' },
   { to: '/products', icon: Coffee, label: '商品管理' },
 ];

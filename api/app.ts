@@ -17,6 +17,7 @@ import bookingRoutes from './routes/bookings.js'
 import productRoutes from './routes/products.js'
 import orderRoutes from './routes/orders.js'
 import statsRoutes from './routes/stats.js'
+import matchmakingRoutes from './routes/matchmaking.js'
 
 // for esm mode
 const __filename = fileURLToPath(import.meta.url)
@@ -40,6 +41,7 @@ app.use('/api/bookings', bookingRoutes)
 app.use('/api/products', productRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/stats', statsRoutes)
+app.use('/api/matchmaking', matchmakingRoutes)
 
 /**
  * health

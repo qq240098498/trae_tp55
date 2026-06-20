@@ -87,6 +87,45 @@ export interface Stats {
   cleaningRooms: number;
 }
 
+export type MatchmakingStatus = 'recruiting' | 'full' | 'confirmed' | 'cancelled';
+
+export interface MatchmakingApplicant {
+  id: string;
+  name: string;
+  phone: string;
+  peopleCount: number;
+  status: 'pending' | 'approved' | 'rejected';
+  appliedAt: string;
+}
+
+export interface Matchmaking {
+  id: string;
+  roomType: RoomType;
+  roomId?: string;
+  hostName: string;
+  hostPhone: string;
+  totalPeopleNeeded: number;
+  currentPeople: number;
+  note?: string;
+  status: MatchmakingStatus;
+  applicants: MatchmakingApplicant[];
+  createdAt: string;
+  confirmedAt?: string;
+}
+
+export const MATCHMAKING_STATUS_LABELS: Record<MatchmakingStatus, string> = {
+  recruiting: '招募中',
+  full: '已满员',
+  confirmed: '已成局',
+  cancelled: '已取消',
+};
+
+export const APPLICANT_STATUS_LABELS: Record<MatchmakingApplicant['status'], string> = {
+  pending: '待审核',
+  approved: '已通过',
+  rejected: '已拒绝',
+};
+
 export const ROOM_TYPE_LABELS: Record<RoomType, string> = {
   mahjong: '麻将',
   poker: '扑克',
