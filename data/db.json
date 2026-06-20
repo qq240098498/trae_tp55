@@ -98,6 +98,33 @@
       "hourlyRate": 28,
       "status": "idle",
       "createdAt": "2026-06-20T01:47:14.209Z"
+    },
+    {
+      "roomNumber": "F601",
+      "type": "mahjong",
+      "capacity": 4,
+      "hourlyRate": 58,
+      "id": "mqm3rrugs26b8d",
+      "status": "idle",
+      "createdAt": "2026-06-20T08:35:41.368Z"
+    },
+    {
+      "roomNumber": "G701",
+      "type": "poker",
+      "capacity": 6,
+      "hourlyRate": 68,
+      "id": "mqm3xk3iae1u0t",
+      "status": "idle",
+      "createdAt": "2026-06-20T08:40:11.262Z"
+    },
+    {
+      "roomNumber": "H801",
+      "type": "werewolf",
+      "capacity": 10,
+      "hourlyRate": 88,
+      "id": "mqm47178camvdw",
+      "status": "idle",
+      "createdAt": "2026-06-20T08:47:33.332Z"
     }
   ],
   "bookings": [],
@@ -284,5 +311,6 @@
       "currentPeople": 4,
       "createdAt": "2026-06-20T03:15:45.804Z"
     }
-  ]
+  ],
+  "customerPreferences": []
 }

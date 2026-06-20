@@ -73,8 +73,8 @@ export default function Rooms() {
         await createRoom(form);
       }
       setModalOpen(false);
-    } catch (e: any) {
-      alert(e.message);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '操作失败');
     }
   };
 

@@ -28,22 +28,46 @@ function ensureDataDir() {
   }
 }
 
-function migrateDatabase(db: Database): Database {
+function migrateDatabase(db: any): Database {
   let migrated = false;
+  if (!Array.isArray(db.rooms)) {
+    db.rooms = [];
+    migrated = true;
+  }
+  if (!Array.isArray(db.bookings)) {
+    db.bookings = [];
+    migrated = true;
+  }
+  if (!Array.isArray(db.products)) {
+    db.products = [];
+    migrated = true;
+  }
+  if (!Array.isArray(db.orders)) {
+    db.orders = [];
+    migrated = true;
+  }
+  if (!Array.isArray(db.matchmakings)) {
+    db.matchmakings = [];
+    migrated = true;
+  }
+  if (!Array.isArray(db.customerPreferences)) {
+    db.customerPreferences = [];
+    migrated = true;
+  }
   for (const order of db.orders) {
     if (order.autoRenew === undefined) {
-      (order as any).autoRenew = true;
+      order.autoRenew = true;
       migrated = true;
     }
     if (order.renewCount === undefined) {
-      (order as any).renewCount = 0;
+      order.renewCount = 0;
       migrated = true;
     }
   }
   if (migrated) {
     saveDatabase(db);
   }
-  return db;
+  return db as Database;
 }
 
 function loadDatabase(): Database {
